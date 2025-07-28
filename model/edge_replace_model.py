@@ -20,6 +20,7 @@ version
     1.1.2: 2025/03/13 set preset label. if not specified label input, automatically set label based on the current generators.
     1.2.0: 2025/05/14 stochastic model added.
     1.2.1: 2025/05/15 bug fix in apply_replacement() and set_generator(). clear_generator() added.
+    1.3.0: 2025/07/28 start using git for tracing edit history, and this is the end of the HARD CORDING history management.
 
 """
 
@@ -359,17 +360,14 @@ def sample_discrete(p):
     return len(p) - 1  # fallback
 
 @njit(parallel = True)
-def neroli_lyapunov(M_array, probs, v0, n_steps:int, trials:int = 100):
+def matrix_lyapunov(M_array, probs, v0, n_steps:int, trials:int = 100):
     """calculate lyapunov exponent referred in Neroli.Zyu's paper.
-
-
     Args:
         M (List): List of matrix
         p (List): List of probability corresponding to the Matrix in M
         a (np.array): vector that represents initial condition.
         n (int): length of matrix product. Suppose not to be too big to avoid overflow.
         trial (int, optional): averaging parameter. Defaults to 10.
-
     Returns:
         float: lyapunov exponent of matrix products.
     """
