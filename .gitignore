@@ -2,10 +2,12 @@
 #git ignore
 
 * 
+# 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
-
-!model/edge_replace_model.py 
-
-
+# グラフモデルについて
+!model/
+!model/edge_replace_model.py
+# 計算ユーティリティについて
+!calc_util/
 !calc_util/matrix.py
 
