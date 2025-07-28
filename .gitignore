@@ -2,11 +2,20 @@
 #git ignore
 
 * 
+
+# discordのurlが載っているのでgitには見せない
+webhook.py
+
 # 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
+
+# multifractal 解析のためのSandboxアルゴリズム
+
+
 # グラフモデルについて
 !model/
 !model/edge_replace_model.py
+
 # 計算ユーティリティについて
 !calc_util/
 !calc_util/matrix.py
