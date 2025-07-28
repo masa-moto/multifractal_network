@@ -2,3 +2,6 @@
 #git ignore
 *
 !model/edge_replace_model.py
+!calc_util/*.py
+
+
