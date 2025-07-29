@@ -10,7 +10,13 @@ webhook.py
 !.gitignore
 
 # multifractal 解析のためのSandboxアルゴリズム
-
+!multifractal/
+!multifractal/__init__.py
+!multifractal/api.py
+!multifractal/core.py
+!multifractal/Multifractal.py
+!multifractal/sandbox.py
+!multifractal/box_covering.py
 
 # グラフモデルについて
 !model/
