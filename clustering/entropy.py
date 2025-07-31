@@ -32,7 +32,6 @@ def _graph_entropy_calc(graph, cluster):
 
     # Convert cluster to set if it's not already
     cluster_nodes = set(cluster) if not isinstance(cluster, set) else cluster
-    
     # Get boundary nodes (neighbors of cluster nodes that are not in cluster)
     boundary_nodes = list()
     for node in cluster_nodes:
