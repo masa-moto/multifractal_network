@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import random
 from clustering import entropy_based_clustering
-import random
 
 def random_color(seed=None):
     if seed is not None:

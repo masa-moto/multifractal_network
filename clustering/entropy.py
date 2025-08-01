@@ -5,7 +5,6 @@ from numba import njit
 
 @njit
 def _GE_calc(boundary_degree, boundary_connections):
-    """Optimized entropy calculation without unnecessary boundary_nodes parameter"""
     entropy = 0.0
     for i in range(len(boundary_degree)):
         if boundary_degree[i] > 0 and boundary_connections[i] > 0:  # Add safety check
