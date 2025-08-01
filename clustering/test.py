@@ -64,7 +64,7 @@ if __name__ == "__main__":
             nodelist=list(cluster),
             node_color = cluster_color,
             node_size = max_node_size-idx,  #大規模クラスタの方が小さく、手前側に描画
-            alpha = i/len(clusters),        #小規模なクラスタを透過度高めで描画
+            alpha = 1+i/len(clusters),        #小規模なクラスタを透過度高めで描画
             label=f"{i}",
             )
         cc |= {cluster_color}
