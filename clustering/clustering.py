@@ -16,16 +16,16 @@ def graph_initializer(graph:nx.Graph, dum):
 
 
 def _update_cluster_wrapper(args):
-    graph = _share_graph
-    cluster, seed = args
     
+    cluster, seed, cutoff = args
+    print(f"{seed}, ", end ="")
     # initial cluster processing...
-    cluster = core.update_cluster(graph, set(cluster), seed, "internal")
+    cluster = core.update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = cutoff)
     
     # final cluster processing...
-    return seed, core.update_cluster(graph, cluster, seed, "boundary")
+    return seed, core.update_cluster(_share_graph, cluster, seed, "boundary", cutoff = cutoff)
 
-def entropy_based_clustering(graph:nx.Graph, threshold:float = 1e-10) -> List[FrozenSet]:
+def entropy_based_clustering(graph:nx.Graph, threshold:float = 1e-3) -> List[FrozenSet]:
     """
     find GE(graph entropy) based clustering. this function uses algorithm by C.K.Edward and C.Young-Rae (doi:10.1109/ICDM.2011.64)
 
@@ -38,11 +38,16 @@ def entropy_based_clustering(graph:nx.Graph, threshold:float = 1e-10) -> List[Fr
     
     nodes = graph.nodes()
     # create initial cluster consisted of seed and its neighbours
+    print("init cluster making")
     init_clusters=[list(graph.neighbors(n)) for n in nodes]
+    print("init cluster made.")
+    
+    # graph_csr = nx.to_scipy_sparse_array(graph, nodelist=nodes, format = "csr")
+    
     # see if there is any candidate to delete from cluster to minimize GE
     init_args = (graph, "dum")
     args = zip(init_clusters, nodes)
-    with mp.Pool(processes= 1, initializer=graph_initializer, initargs=init_args) as p:
+    with mp.Pool(processes= mp.cpu_count(), initializer=graph_initializer, initargs=init_args) as p:
         clusters = p.map(_update_cluster_wrapper, args)
     # calculate GE and update cluster until GE becomes minimum
     return clusters
