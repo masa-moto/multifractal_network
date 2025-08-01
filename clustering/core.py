@@ -37,9 +37,7 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str, cut
     Returns:
         FrozenSet: the cluster that minimize GE. only one cluster is considered.
     """
-    #[(node, degree) for node in cluster] in descending order of their degree.
-
-        
+    # candidates are consisted of internal nodes of cluster excluding seed node.        
     candidates = deque(
             sorted(
                 [(idx, graph.degree(idx)) for idx in cluster if not idx == seed],
