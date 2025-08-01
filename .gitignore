@@ -15,6 +15,7 @@ webhook.py
 !clustering/core.py
 !clustering/entropy.py
 !clustering/test.py
+!clustering/test.png
 
 
 # multifractal 解析のためのSandboxアルゴリズム
