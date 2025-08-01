@@ -25,7 +25,7 @@ def _update_boundary(graph, cluster):
         reverse=True)
 
 
-def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str, cutoff: float) -> Set:
+def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str) -> Set:
     """
     update cluster and calculate GE reccurently so that GE to be minimized. only internal nodes of cluster are considered.
 
@@ -37,10 +37,11 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str, cut
     Returns:
         FrozenSet: the cluster that minimize GE. only one cluster is considered.
     """
-    # candidates are consisted of internal nodes of cluster excluding seed node.        
+    # candidates are consisted of internal nodes of cluster excluding seed node.    
+    deg_dict = dict(graph.degree)
     candidates = deque(
             sorted(
-                [(idx, graph.degree(idx)) for idx in cluster if not idx == seed],
+                [(idx, deg_dict[idx]) for idx in cluster if idx != seed],
                 key=lambda x: x[1],
                 reverse=True
                 )
@@ -61,7 +62,8 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str, cut
         # delete the candidate from cluster.
         if posterious_GE < previous_GE:
             cluster = poped_cluster
-        # when deque becomes empty, while-loop ends automatically       
+        # when deque becomes empty, while-loop ends automatically     
+    cluster |= {seed}
     return cluster
 
 def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: float = 1e-5) -> FrozenSet:
@@ -78,14 +80,14 @@ def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: flo
     """
     cluster = set(cluster) if not isinstance(cluster, set) else cluster
     candidates = _update_boundary(graph, cluster)
-    GE_delta = 100
     previous_GE = _graph_entropy_calc(graph, cluster)
+    GE_delta = 1
     while candidates and abs(GE_delta) > cutoff:
         
         GE_delta = float("inf")
         best_node = None
         
-        #calculate GE of current cluster.
+        # calculate GE of current cluster.
         
         # pick one candidate node of cluster neighbour.  
         # As a grreedy algorithm, the candidate to be merged into the cluster is selected from all outer boundary nodes
@@ -95,15 +97,16 @@ def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: flo
             if d < GE_delta:
                 best_node = node
                 GE_delta = d
-                
+
         if abs(GE_delta) > cutoff:
             cluster.add(best_node)
-            previous_GE+= GE_delta
+            previous_GE += GE_delta
             candidates = _update_boundary(graph, cluster)
         else:
+            # print(f"{seed:4}, {previous_GE:.3f}, {len(cluster)}")
             break
         # when deque becomes empty, while-loop ends automatically       
-    return frozenset(cluster)
+    return cluster
 
 def update_cluster(graph:nx.Graph, cluster:nx.Graph, seed:int, update_scope = "boundary", cutoff = 1e-10):
     """
@@ -123,6 +126,6 @@ def update_cluster(graph:nx.Graph, cluster:nx.Graph, seed:int, update_scope = "b
         return _update_cluster_boundary(graph, cluster,seed, cutoff)
     elif update_scope == "internal":
         assert cluster, f"empty cluster seed = {seed}"
-        return _update_cluster_internal(graph, cluster,seed, cutoff)
+        return _update_cluster_internal(graph, cluster,seed)
     else:
         raise ValueError(f"undefined scope: {update_scope}")
