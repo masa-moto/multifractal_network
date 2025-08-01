@@ -27,12 +27,12 @@ def _update_boundary(graph, cluster):
 
 def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str) -> Set:
     """
-    update cluster and calculate GE reccurently so that GE to be minimized. only internal nodes of cluster are considered.
+    update cluster and calculate GE recurrently so that GE to be minimized. only internal nodes of cluster are considered.
 
     Args:
-        graph (nx.Graph): graph obect including "cluster" as subgraph
+        graph (nx.Graph): graph object including "cluster" as subgraph
         cluster (nx.Graph): cluster on the "graph". cluster must be connected, include at less than one node.
-        cutoff (float): cuoff threshold of GE. in case GE become less than cutoff, while loop ends.
+        cutoff (float): cutoff threshold of GE. in case GE become less than cutoff, while loop ends.
 
     Returns:
         FrozenSet: the cluster that minimize GE. only one cluster is considered.
@@ -68,12 +68,12 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph, seed:int|str) -> 
 
 def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: float = 1e-5) -> FrozenSet:
     """
-    update cluster and calculate GE reccurently so that GE to be minimized. only boundary nodes of cluster are considered.
+    update cluster and calculate GE recurrently so that GE to be minimized. only boundary nodes of cluster are considered.
 
     Args:
-        graph (nx.Graph): graph obect including "cluster" as subgraph
+        graph (nx.Graph): graph object including "cluster" as subgraph
         cluster (nx.Graph or Set): cluster on the "graph". cluster must be connected, include at less than one node.
-        cutoff (float o): cuoff threshold of GE. in case GE become less than cutoff, while loop ends.
+        cutoff (float): cutoff threshold of GE. in case GE become less than cutoff, while loop ends.
 
     Returns:
         FrozenSet: the cluster that minimize GE. only one cluster is considered.
@@ -90,7 +90,7 @@ def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: flo
         # calculate GE of current cluster.
         
         # pick one candidate node of cluster neighbour.  
-        # As a grreedy algorithm, the candidate to be merged into the cluster is selected from all outer boundary nodes
+        # As a greedy algorithm, the candidate to be merged into the cluster is selected from all outer boundary nodes
         for node, deg in candidates:
             new_GE = _graph_entropy_calc(graph, cluster | {node})
             d = new_GE - previous_GE

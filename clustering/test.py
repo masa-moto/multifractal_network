@@ -45,7 +45,12 @@ if __name__ == "__main__":
     
     fig = plt.figure(dpi = 300)
     ax = fig.add_subplot()
-    pos = nx.nx_agraph.graphviz_layout(g, prog = "sfdp")
+    try:
+        pos = nx.nx_agraph.graphviz_layout(g, prog = "sfdp")
+    except(ImportError, ModuleNotFoundError):
+        print('pygraphviz is not supported; falling back to kamada_kawai_layout.')
+        pos = nx.kamada_kawai_layout(g)
+    
     nx.draw_networkx_edges(g, pos=pos, ax = ax, label = None, alpha = .5, width = 1)
     
     # 大規模なクラスタを最後に（一番上に）描画するようにクラスタサイズで並び替えてから描画処理
@@ -64,7 +69,7 @@ if __name__ == "__main__":
             nodelist=list(cluster),
             node_color = cluster_color,
             node_size = max_node_size-idx,  #大規模クラスタの方が小さく、手前側に描画
-            alpha = 1+i/len(clusters),        #小規模なクラスタを透過度高めで描画
+            alpha = (1+i)/len(clusters),        #小規模なクラスタを透過度高めで描画
             label=f"{i}",
             )
         cc |= {cluster_color}
