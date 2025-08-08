@@ -37,9 +37,11 @@ def entropy_based_clustering(
 
     Args:
         grpah (nx.Graph): graph to be examined.
+        cluster_cutoff_size(int): minimum number of nodes of cluster.
+        GE_threshold(float): threshold for updating GE. when difference of GE becomes below threshold, algorithm halts cluster update.
 
     Returns:
-        List[FrozenSet]: index of return represents seed nodes and FrozenSet represents GE based cluster of corresponding seed node.
+        List[Tuple[int, Set]]: index of return represents seed nodes and Set represents GE based cluster of corresponding seed node.
     """
     
     
