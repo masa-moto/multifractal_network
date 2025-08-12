@@ -3,8 +3,8 @@ import numpy as np
 import multiprocessing as mp 
 from typing import FrozenSet, List, Set
 
-import entropy
-import core 
+from .core import update_cluster
+# import entropy
 
 
 
@@ -22,10 +22,10 @@ def _update_cluster_wrapper(args):
     
     cluster, seed = args
     # initial cluster processing...
-    cluster = core.update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold)
+    cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold)
     
     # final cluster processing...
-    return seed, core.update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold)
+    return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold)
 
 def entropy_based_clustering(
     graph:nx.Graph,

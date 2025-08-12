@@ -9,9 +9,10 @@ webhook.py
 # 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
 !README.md
+
 # entropy-clustering ブランチ用のホワイトリスト。
 !clustering/
-!clustering/clustering.py
+!clustering/cluster.py
 !clustering/core.py
 !clustering/entropy.py
 !clustering/test.py
