@@ -1,3 +1,5 @@
+# ハンドウイルカのソーシャルネットワークに対してGEに基づくクラスタリングを行う。
+# クラスタリングの結果を一つの画像(test.png)にまとめて出力する。
 import networkx as nx 
 import numpy as np 
 import matplotlib.pyplot as plt 
