@@ -4,7 +4,8 @@ import networkx as nx
 import numpy as np 
 import matplotlib.pyplot as plt 
 import random
-from clustering import entropy_based_clustering
+
+from cluster import entropy_based_clustering, draw_clusters
 
 def random_color(seed=None):
     if seed is not None:
@@ -28,10 +29,14 @@ if __name__ == "__main__":
     if not isinstance(list(g.nodes)[0], int):
         g = nx.convert_node_labels_to_integers(g)
     
+    # グラフの基本的な情報を表示
+    print(
+        f"#nodes{nx.number_of_nodes(g)}, #edges{nx.number_of_edges(g)}, diameter{nx.diameter(g)},"
+        )
     # クラスタリング
     # clustering_cutoff_sizeで指定した数より多いノードを含むクラスタのみを返す
     # GE_thresholdで指定した値よりも、グラフエントロピーの変化が小さくなったらそのクラスタ構造を確定させる
-    clusters = entropy_based_clustering(g, cluster_cutoff_size=2, GE_threshold=0)
+    clusters = entropy_based_clustering(g, cluster_cutoff_size=0, GE_threshold=0)
     num_clusters = len(clusters)
     
     # クラスタリングから弾かれたノードを調査
@@ -43,10 +48,17 @@ if __name__ == "__main__":
     
     #1つ以上のクラスタに入っていないノードがある場合、これを表示する
     if outlanders:
-        print(f"outlanders:{outlanders}")
+        print(f"outlanders: {outlanders}")
+    else:
+        print("Each nodes are in at least one cluster.")
+    
+    # 構造が異なるクラスタを描画する。　グラフ内のクラスタの位置と、クラスタを抜き出したものをセットで描画する。
+    dict_clusters = {clusters[i][0]: set(clusters[i][1]) for i in range(num_clusters)}
+    draw_clusters(g, None, dict_clusters, "test_clustering.png", -1)
     
     fig = plt.figure(dpi = 300)
     ax = fig.add_subplot()
+    
     try:
         pos = nx.nx_agraph.graphviz_layout(g, prog = "sfdp")
     except(ImportError, ModuleNotFoundError):
