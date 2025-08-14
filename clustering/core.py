@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from collections import deque
 
 
-from .entropy import _graph_entropy_calc
+from entropy import _graph_entropy_calc
 
 
 def _update_boundary(graph, cluster):
@@ -129,3 +129,27 @@ def update_cluster(graph:nx.Graph, cluster:nx.Graph, seed:int, update_scope = "b
         return _update_cluster_internal(graph, cluster,seed)
     else:
         raise ValueError(f"undefined scope: {update_scope}")
+    
+    
+def seed_sorter(order, clusters):
+    """sorting seed nodes of given cluster.
+
+    Args:
+        order (str, list, tuple): order of seed. default is descending order. "descending", "ascending", and iterable of seeds are acceptable.
+        clusters (dict): dict object containing seed for its key and cluster for corresponding value.
+
+    Raises:
+        ValueError: if invalid order is input, raise ValueError
+
+    Returns:
+        seeds (list): list object for seeds. 
+    """
+    if order is None or order == "descending":
+        seeds = sorted(clusters.keys(), key = lambda s:len(clusters[s]), reverse=True)
+    elif order == "ascending":
+        seeds = sorted(clusters.keys(), key = lambda s:len(clusters[s]), reverse=False)
+    elif isinstance(order, (list, tuple)):
+        seeds = [s for s in order if s in clusters]
+    else:
+        raise ValueError(f"unknown order : {order}")
+    return seeds

@@ -1,9 +1,12 @@
+# main program file for clustering and its around.
+# GE(graph entropy) or modularity based clustering functions, and visualization function.
 import networkx as nx 
 import numpy as np 
 import multiprocessing as mp 
+import matplotlib.pyplot as plt 
 from typing import FrozenSet, List, Set
 
-from .core import update_cluster
+from core import update_cluster, seed_sorter
 # import entropy
 
 
@@ -63,3 +66,89 @@ def entropy_based_clustering(
 
 def modularity_based_clustering(graph:nx.Graph):
     return nx.greedy_modularity_communities(graph)
+
+def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "descending"):
+    """
+    function for drawing graph mainly focusing on cluster structure.
+    highlight a cluster in the graph and lists the specified number(num_cluster) of cluster in specified order (order).
+    any clusters consisting of exactly the same nodes are treated as the same cluster.
+
+    Args:
+        graph (nx.Graph): graph to be drawn
+        pos (dict): positions of all components of graph.
+        clusters (dict): dictionary of clusters whose items are {seed_node : set([incluster nodes])}.
+        fig_path (str): path for saved figure.
+        num_cluster (int, optional): number of cluster to be drawn. Defaults to 5. if num_cluster=-1, all the clusters are drawn.
+        order (str or iterable,  optional): cluster selection order. Defaults to "descending". str input "descending", "ascending" are supported.
+        If there is user input of order of seeds, that order is selected.
+    """
+    # specifying unique clusters
+    unique_clusters = {}
+    cluster_groups = {}
+    seeds = seed_sorter(None, clusters)
+    for seed in seeds:
+        cluster_set = set(clusters[seed])
+        matched_seed = None
+        for u_seed, u_cluster in unique_clusters.items():
+            if cluster_set == u_cluster:
+                matched_seed = u_seed
+                break
+
+        if matched_seed is None:
+            # unique cluster detected:
+            unique_clusters[seed] = cluster_set
+            cluster_groups[seed] = [seed]
+        else:
+            # known cluster detected:
+            cluster_groups[matched_seed].append(seed)
+    
+    # updating num_cluster when num_cluster < unique clusters count.
+    num_cluster = min(num_cluster, len(unique_clusters.keys()))
+    
+    # setting position if None
+    if pos is None:
+        pos = nx.nx_agraph.pygraphviz_layout(graph, prog="sfdp")
+        
+    # ordering seed nodes    
+    seeds = seed_sorter(None, unique_clusters)
+    
+    #specifying cluster to be drawn. all or specified
+    if num_cluster == -1:
+        num_cluster = len(unique_clusters)
+    else:
+        num_cluster = min(num_cluster, len(unique_clusters.keys()))
+    if num_cluster:
+        seeds = seeds[:num_cluster]
+    
+    # plotting section.
+    fix, axes = plt.subplots(num_cluster, 2, figsize = (12, 4*num_cluster))
+    for ax, seed in zip(axes, seeds):
+        cluster_nodes = unique_clusters[seed]
+        node_color = ["b" if n == seed else "r" if n in cluster_nodes else "lightgray" for n in graph.nodes()]
+        edge_color = ["k" if u in cluster_nodes and v in cluster_nodes else "lightgray" for u, v in graph.edges()]
+        
+        #left side plot: cluster in entire graph
+        nx.draw_networkx(
+            graph, 
+            pos,
+            node_color=node_color,
+            edge_color=edge_color,
+            with_labels=True,
+            node_size =50,
+            ax = ax[0])
+        ax[0].set_title(f"full graph - cluster: seed {seed}. size = {len(cluster_nodes)}")
+        
+        #right side plot: cluster structure
+        subgraph = graph.subgraph(unique_clusters[seed]).copy()
+        node_color = ["b" if n == seed else "r" for n in subgraph.nodes()]
+        nx.draw_networkx(
+            subgraph,
+            pos = nx.kamada_kawai_layout(subgraph),
+            ax = ax[1],
+            node_color = node_color
+        )
+        ax[1].set_title(f"cluster seed {cluster_groups[seed]}. size = {len(cluster_nodes)}")
+    
+    plt.tight_layout()
+    plt.savefig(fig_path)
+    
