@@ -6,7 +6,7 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt 
 from typing import FrozenSet, List, Set
 
-from core import update_cluster, seed_sorter
+from .core import update_cluster, seed_sorter
 # import entropy
 
 
