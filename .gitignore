@@ -9,6 +9,7 @@ webhook.py
 # 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
 !README.md
+!compass.md
 
 # entropy-clustering ブランチ用のホワイトリスト。
 !clustering/
