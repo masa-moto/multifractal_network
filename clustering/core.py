@@ -98,7 +98,7 @@ def _update_cluster_boundary(graph:nx.Graph, cluster:nx.Graph, seed, cutoff: flo
                 best_node = node
                 GE_delta = d
 
-        if abs(GE_delta) > cutoff:
+        if GE_delta<0:
             cluster.add(best_node)
             previous_GE += GE_delta
             candidates = _update_boundary(graph, cluster)
