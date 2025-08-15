@@ -1,25 +1,32 @@
 import networkx as nx 
 import numpy as np 
 from numba import njit
+from typing import Set, Iterable
 
+try:
+    from numba import njit 
+except ImportError:
+    def njit(func=None, **_k):
+        return func if func else (lambda f: f)
 
 @njit
 def _GE_calc(boundary_degree, boundary_connections):
     entropy = 0.0
     for i in range(len(boundary_degree)):
-        if boundary_degree[i] > 0 and boundary_connections[i] > 0:  # Add safety check
-            p1 = boundary_connections[i] / boundary_degree[i]
-            p0 = 1.0 - p1
+        deg_i, conn_i = boundary_degree[i], boundary_connections[i]
+        if deg_i > 0 and conn_i > 0:  # Add safety check
+            p1 = conn_i / deg_i
             
+        if p1<=0.0 or p1 >= 1.0:
+            continue
+            
+        p0 = 1.0 - p1
             # Inline entropy calculation
-            if p1 > 0:
-                entropy -= p1 * np.log(p1)
-            if p0 > 0:
-                entropy -= p0 * np.log(p0)
+        entropy -= p1 * np.log(p1) - p0 * np.log(p0)
     return entropy
     
     
-def _graph_entropy_calc(graph, cluster):
+def _graph_entropy_calc(graph: nx.Graph, cluster:Iterable) -> float:
     """
     calculate GE(graph entropy) of given cluster on the graph.
     not manipulate cluster growing process.
@@ -31,7 +38,9 @@ def _graph_entropy_calc(graph, cluster):
     Return:
         entropy (float): GE for the given pair of graph and cluster
     """
-
+    if not cluster:
+        return 0.0
+    
     # Convert cluster to set if it's not already
     cluster_nodes = set(cluster) if not isinstance(cluster, set) else cluster
     
