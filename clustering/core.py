@@ -94,9 +94,9 @@ def _update_cluster_boundary(
         deg_dict = dict(graph.degree)
 
     cluster = set(cluster) if not isinstance(cluster, set) else cluster
-    candidates = _update_boundary(graph, cluster)
+    candidates = _update_boundary(graph, cluster, deg_dict)
     previous_GE = _graph_entropy_calc(graph, cluster)
-    
+    GE_delta = cutoff+1
     while candidates and abs(GE_delta) > cutoff:
         
         GE_delta = 0
@@ -117,7 +117,7 @@ def _update_cluster_boundary(
         
         cluster.add(best_node)
         previous_GE += GE_delta
-        candidates = _update_boundary(graph, cluster)
+        candidates = _update_boundary(graph, cluster, deg_dict)
         # when deque becomes empty, while-loop ends automatically       
     return cluster
 

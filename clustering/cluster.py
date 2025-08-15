@@ -4,7 +4,7 @@ import networkx as nx
 import numpy as np 
 import multiprocessing as mp 
 import matplotlib.pyplot as plt 
-from typing import FrozenSet, List, Set
+from typing import FrozenSet, List, Set, Dict
 
 from .core import update_cluster, seed_sorter
 # import entropy
@@ -13,10 +13,12 @@ from .core import update_cluster, seed_sorter
 
 _share_graph = nx.Graph()
 _share_threshold = 1e-10
-
-def graph_initializer(graph:nx.Graph, threshold:float):
+_deg_dict=None
+def graph_initializer(graph:nx.Graph, threshold:float, deg_dict: Dict):
     global _share_graph
     global _share_threshold
+    global _deg_dict
+    _deg_dict = deg_dict
     _share_graph = graph
     _share_threshold = threshold
 
@@ -25,10 +27,10 @@ def _update_cluster_wrapper(args):
     
     cluster, seed = args
     # initial cluster processing...
-    cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold)
+    cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold, deg_dict=_deg_dict)
     
     # final cluster processing...
-    return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold)
+    return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold, deg_dict=_deg_dict)
 
 def entropy_based_clustering(
     graph:nx.Graph,
@@ -53,9 +55,9 @@ def entropy_based_clustering(
     nodes = graph.nodes
     graph_csr = nx.to_scipy_sparse_array(graph, nodelist=nodes, format = "csr")
     init_clusters = [set(map(int, graph_csr[n:n+1,:].nonzero()[1])) for n in range(graph_csr.shape[0])]
-    
+    deg_dict = dict(graph.degree)
     # see if there is any candidate to delete from cluster to minimize GE
-    init_args = (graph, GE_threshold)
+    init_args = (graph, GE_threshold, deg_dict)
     args = zip(init_clusters, nodes)
     with mp.Pool(processes= mp.cpu_count(), initializer=graph_initializer, initargs=init_args) as p:
         clusters = p.map(_update_cluster_wrapper, args)
