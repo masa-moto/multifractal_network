@@ -124,10 +124,10 @@ def _update_cluster_boundary(
     return cluster
 
 
-def _update_cluster_boundary(
+def _update_cluster_boundary_0(
     graph:nx.Graph,
     cluster:nx.Graph,
-    seed,
+    seed:int,
     cutoff: float = 1e-5,
     deg_dict:None|Dict = None) -> Set:
     """
@@ -156,9 +156,11 @@ def _update_cluster_boundary(
         tentative_cluster = cluster | {node}
         new_GE = _graph_entropy_calc(graph, tentative_cluster)
         if new_GE < previous_GE:
+            # if GE decreases, update cluster and candidate(boundary) of the cluster.
             cluster = tentative_cluster
             previous_GE = new_GE
-            candidates = _update_boundary(graph, cluster, deg_dict)
+            candidates = deque(_update_boundary(graph, cluster, deg_dict))
+    return cluster
             
 
 
@@ -191,7 +193,7 @@ def update_cluster(
     print(f"{__name__}: 3: {cluster} ")
     if update_scope == "boundary":
         assert cluster, f"empty cluster seed = {seed}"
-        return _update_cluster_boundary(graph, cluster,seed, cutoff, deg_dict)
+        return _update_cluster_boundary_0(graph, cluster,seed, cutoff, deg_dict)
     elif update_scope == "internal":
         assert cluster, f"empty cluster seed = {seed}"
         return _update_cluster_internal(graph, cluster,seed, deg_dict)
