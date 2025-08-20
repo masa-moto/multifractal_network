@@ -64,7 +64,7 @@ def entropy_based_clustering(
 
         clusters = p.map(_update_cluster_wrapper, args)
     # filtering cluster by their size
-    clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > cluster_cutoff_size]
+    clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > max(1, cluster_cutoff_size)]
     return clusters
 
 def modularity_based_clustering(graph:nx.Graph):
