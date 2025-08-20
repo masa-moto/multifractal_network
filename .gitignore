@@ -9,14 +9,17 @@ webhook.py
 # 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
 !README.md
+!compass.md
+
 # entropy-clustering ブランチ用のホワイトリスト。
 !clustering/
-!clustering/clustering.py
+!clustering/cluster.py
 !clustering/core.py
 !clustering/entropy.py
 !clustering/test.py
 !clustering/test.png
-
+!clustering/soc-dolphins.mtx
+!soc-dolphins.mtx
 
 # multifractal 解析のためのSandboxアルゴリズム
 !multifractal/
