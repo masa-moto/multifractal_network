@@ -47,7 +47,6 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph | Set, seed:int|st
                 reverse=True
                 )
             )
-    print(f"{__name__}: 1: {cluster}, {candidates}")
     
     previous_GE = _graph_entropy_calc(graph, cluster)
     while candidates:
@@ -66,7 +65,6 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph | Set, seed:int|st
         #recalculate GE of the updated cluster.
         posterious_GE = _graph_entropy_calc(graph, poped_cluster)
         # delete the candidate from cluster.
-        print(f"{__name__}: 2: {cluster}, {idx}, {previous_GE:.3f}, {posterious_GE:.3f}")
         if posterious_GE < previous_GE:
             cluster = poped_cluster
             previous_GE = posterious_GE
@@ -190,7 +188,6 @@ def update_cluster(
     if deg_dict is None:
         deg_dict = dict(graph.degree)
 
-    print(f"{__name__}: 3: {cluster} ")
     if update_scope == "boundary":
         assert cluster, f"empty cluster seed = {seed}"
         return _update_cluster_boundary_0(graph, cluster,seed, cutoff, deg_dict)

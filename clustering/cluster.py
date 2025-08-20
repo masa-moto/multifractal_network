@@ -24,11 +24,9 @@ def graph_initializer(graph:nx.Graph, threshold:float, deg_dict: Dict):
 def _update_cluster_wrapper(args):
     
     cluster, seed = args
-    print(f"{__name__}: 1: {cluster}")
     # initial cluster processing...
     cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold, deg_dict=_deg_dict)
     # final cluster processing...
-    print(f"{__name__}: 2: {cluster}")
 
     
     return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold, deg_dict=_deg_dict)
@@ -67,8 +65,8 @@ def entropy_based_clustering(
     clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > max(1, cluster_cutoff_size)]
     return clusters
 
-def modularity_based_clustering(graph:nx.Graph):
-    return nx.greedy_modularity_communities(graph)
+def modularity_based_clustering(graph:nx.Graph, weight=None, resolution=1, cutoff=1, best_n=None):
+    return nx.community.greedy_modularity_communities(graph, weight, resolution, cutoff, best_n)
 
 def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "descending"):
     """
