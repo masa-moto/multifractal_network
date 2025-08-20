@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 from typing import FrozenSet, List, Set, Dict
 
 from .core import update_cluster, seed_sorter
-# import entropy
-
 
 
 _share_graph = nx.Graph()
@@ -26,10 +24,13 @@ def graph_initializer(graph:nx.Graph, threshold:float, deg_dict: Dict):
 def _update_cluster_wrapper(args):
     
     cluster, seed = args
+    print(f"{__name__}: 1: {cluster}")
     # initial cluster processing...
     cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold, deg_dict=_deg_dict)
-    
     # final cluster processing...
+    print(f"{__name__}: 2: {cluster}")
+
+    
     return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold, deg_dict=_deg_dict)
 
 def entropy_based_clustering(
@@ -54,14 +55,14 @@ def entropy_based_clustering(
     # create initial cluster consisted of seed and its neighbours
     nodes = graph.nodes
     graph_csr = nx.to_scipy_sparse_array(graph, nodelist=nodes, format = "csr")
-    init_clusters = [set(map(int, graph_csr[n:n+1,:].nonzero()[1])) for n in range(graph_csr.shape[0])]
+    init_clusters = [set(nx.neighbors(graph, node)) | {node} for node in nodes]#[set(map(int, graph_csr[n:n+1,:].nonzero()[1])) for n in range(graph_csr.shape[0])]
     deg_dict = dict(graph.degree)
     # see if there is any candidate to delete from cluster to minimize GE
     init_args = (graph, GE_threshold, deg_dict)
     args = zip(init_clusters, nodes)
-    with mp.Pool(processes= mp.cpu_count(), initializer=graph_initializer, initargs=init_args) as p:
+    with mp.Pool(processes= 1, initializer=graph_initializer, initargs=init_args) as p:
+
         clusters = p.map(_update_cluster_wrapper, args)
-    
     # filtering cluster by their size
     clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > cluster_cutoff_size]
     return clusters
@@ -103,7 +104,6 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
         else:
             # known cluster detected:
             cluster_groups[matched_seed].append(seed)
-    
     # updating num_cluster when num_cluster < unique clusters count.
     num_cluster = min(num_cluster, len(unique_clusters.keys()))
     
