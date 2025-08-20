@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from collections import deque
 
 
-from entropy import _graph_entropy_calc
+from .entropy import _graph_entropy_calc
 
 
 def _update_boundary(graph, cluster):

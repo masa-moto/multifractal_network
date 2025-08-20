@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np 
 import matplotlib.pyplot as plt 
 import random
-from clustering import entropy_based_clustering
+from api import entropy_based_clustering
 
 def random_color(seed=None):
     if seed is not None:
