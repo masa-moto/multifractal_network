@@ -119,9 +119,8 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
         num_cluster = min(num_cluster, len(unique_clusters.keys()))
     if num_cluster:
         seeds = seeds[:num_cluster]
-    
     # plotting section.
-    fix, axes = plt.subplots(num_cluster, 2, figsize = (12, 4*num_cluster))
+    fix, axes = plt.subplots(num_cluster, 2, figsize = (9, 3*num_cluster))
     for ax, seed in zip(axes, seeds):
         cluster_nodes = unique_clusters[seed]
         node_color = ["b" if n == seed else "r" if n in cluster_nodes else "lightgray" for n in graph.nodes()]
@@ -136,7 +135,12 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
             with_labels=True,
             node_size =50,
             ax = ax[0])
-        ax[0].set_title(f"full graph - cluster: seed {seed}. size = {len(cluster_nodes)}")
+        # if isinstance(seed, frozenset):
+            # seed = set(seed)
+        if isinstance(seed, frozenset):
+            ax[0].set_title(f"full graph - cluster: {','.join(map(str, seed))}. size = {len(cluster_nodes)}")
+        else:
+            ax[0].set_title(f"full graph - cluster: {seed}. size = {len(cluster_nodes)}")
         
         #right side plot: cluster structure
         subgraph = graph.subgraph(unique_clusters[seed]).copy()
@@ -147,7 +151,7 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
             ax = ax[1],
             node_color = node_color
         )
-        ax[1].set_title(f"cluster seed {cluster_groups[seed]}. size = {len(cluster_nodes)}")
+        # ax[1].set_title(f"cluster seed {cluster_groups[seed]}. size = {len(cluster_nodes)}")
     
     plt.tight_layout()
     plt.savefig(fig_path)
