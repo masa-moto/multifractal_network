@@ -7,8 +7,6 @@ import matplotlib.pyplot as plt
 from typing import FrozenSet, List, Set, Dict
 
 from .core import update_cluster, seed_sorter
-# import entropy
-
 
 
 _share_graph = nx.Graph()
@@ -28,8 +26,9 @@ def _update_cluster_wrapper(args):
     cluster, seed = args
     # initial cluster processing...
     cluster = update_cluster(_share_graph, set(cluster), seed, "internal", cutoff = _share_threshold, deg_dict=_deg_dict)
-    
     # final cluster processing...
+
+    
     return seed, update_cluster(_share_graph, cluster, seed, "boundary", cutoff = _share_threshold, deg_dict=_deg_dict)
 
 def entropy_based_clustering(
@@ -54,20 +53,20 @@ def entropy_based_clustering(
     # create initial cluster consisted of seed and its neighbours
     nodes = graph.nodes
     graph_csr = nx.to_scipy_sparse_array(graph, nodelist=nodes, format = "csr")
-    init_clusters = [set(map(int, graph_csr[n:n+1,:].nonzero()[1])) for n in range(graph_csr.shape[0])]
+    init_clusters = [set(nx.neighbors(graph, node)) | {node} for node in nodes]#[set(map(int, graph_csr[n:n+1,:].nonzero()[1])) for n in range(graph_csr.shape[0])]
     deg_dict = dict(graph.degree)
     # see if there is any candidate to delete from cluster to minimize GE
     init_args = (graph, GE_threshold, deg_dict)
     args = zip(init_clusters, nodes)
-    with mp.Pool(processes= mp.cpu_count(), initializer=graph_initializer, initargs=init_args) as p:
+    with mp.Pool(processes= 1, initializer=graph_initializer, initargs=init_args) as p:
+
         clusters = p.map(_update_cluster_wrapper, args)
-    
     # filtering cluster by their size
-    clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > cluster_cutoff_size]
+    clusters = [(seed, cluster) for seed, cluster in clusters if len(cluster) > max(1, cluster_cutoff_size)]
     return clusters
 
-def modularity_based_clustering(graph:nx.Graph):
-    return nx.greedy_modularity_communities(graph)
+def modularity_based_clustering(graph:nx.Graph, weight=None, resolution=1, cutoff=1, best_n=None):
+    return nx.community.greedy_modularity_communities(graph, weight, resolution, cutoff, best_n)
 
 def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "descending"):
     """
@@ -103,7 +102,6 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
         else:
             # known cluster detected:
             cluster_groups[matched_seed].append(seed)
-    
     # updating num_cluster when num_cluster < unique clusters count.
     num_cluster = min(num_cluster, len(unique_clusters.keys()))
     
@@ -121,9 +119,8 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
         num_cluster = min(num_cluster, len(unique_clusters.keys()))
     if num_cluster:
         seeds = seeds[:num_cluster]
-    
     # plotting section.
-    fix, axes = plt.subplots(num_cluster, 2, figsize = (12, 4*num_cluster))
+    fix, axes = plt.subplots(num_cluster, 2, figsize = (9, 3*num_cluster))
     for ax, seed in zip(axes, seeds):
         cluster_nodes = unique_clusters[seed]
         node_color = ["b" if n == seed else "r" if n in cluster_nodes else "lightgray" for n in graph.nodes()]
@@ -138,7 +135,12 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
             with_labels=True,
             node_size =50,
             ax = ax[0])
-        ax[0].set_title(f"full graph - cluster: seed {seed}. size = {len(cluster_nodes)}")
+        # if isinstance(seed, frozenset):
+            # seed = set(seed)
+        if isinstance(seed, frozenset):
+            ax[0].set_title(f"full graph - cluster: {','.join(map(str, seed))}. size = {len(cluster_nodes)}")
+        else:
+            ax[0].set_title(f"full graph - cluster: {seed}. size = {len(cluster_nodes)}")
         
         #right side plot: cluster structure
         subgraph = graph.subgraph(unique_clusters[seed]).copy()
@@ -149,7 +151,7 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
             ax = ax[1],
             node_color = node_color
         )
-        ax[1].set_title(f"cluster seed {cluster_groups[seed]}. size = {len(cluster_nodes)}")
+        # ax[1].set_title(f"cluster seed {cluster_groups[seed]}. size = {len(cluster_nodes)}")
     
     plt.tight_layout()
     plt.savefig(fig_path)

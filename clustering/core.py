@@ -42,11 +42,12 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph | Set, seed:int|st
     
     candidates = deque(
             sorted(
-                [(idx, deg_dict[idx]) for idx in cluster if idx != seed],
+                [(idx, deg_dict[idx]) for idx in cluster],
                 key=lambda x: x[1],
                 reverse=True
                 )
             )
+    
     previous_GE = _graph_entropy_calc(graph, cluster)
     while candidates:
         #calculate GE of current cluster.
@@ -55,7 +56,7 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph | Set, seed:int|st
         #pick one candidate node of cluster neighbour. 
         idx, _deg = candidates.popleft()
         if idx == seed:
-            continue 
+            continue
         
         # create temporal cluster
         poped_cluster = cluster - {idx}
@@ -68,7 +69,6 @@ def _update_cluster_internal(graph:nx.Graph, cluster:nx.Graph | Set, seed:int|st
             cluster = poped_cluster
             previous_GE = posterious_GE
         # when deque becomes empty, while-loop ends automatically     
-    cluster.add(seed)
     return cluster
 
 def _update_cluster_boundary(
@@ -121,6 +121,48 @@ def _update_cluster_boundary(
         # when deque becomes empty, while-loop ends automatically       
     return cluster
 
+
+def _update_cluster_boundary_0(
+    graph:nx.Graph,
+    cluster:nx.Graph,
+    seed:int,
+    cutoff: float = 1e-5,
+    deg_dict:None|Dict = None) -> Set:
+    """
+    update cluster and calculate GE recurrently so that GE to be minimized. only boundary nodes of cluster are considered.
+    Add node into cluster as soon as finding the node which decreases GE.
+    Args:
+        graph (nx.Graph): graph object including "cluster" as subgraph
+        cluster (nx.Graph or Set): cluster on the "graph". cluster must be connected, include at less than one node.
+        cutoff (float): cutoff threshold of GE. in case GE become less than cutoff, while loop ends.
+
+    Returns:
+        FrozenSet: the cluster that minimize GE. only one cluster is considered.
+    """
+    if not cluster:
+        return cluster
+    if deg_dict is None:
+        deg_dict = dict(graph.degree)
+
+    cluster = set(cluster) if not isinstance(cluster, set) else cluster
+    candidates = deque(_update_boundary(graph, cluster, deg_dict))
+    previous_GE = _graph_entropy_calc(graph, cluster)
+    GE_delta = cutoff+1
+    while candidates:    
+        
+        node, _deg = candidates.popleft()
+        tentative_cluster = cluster | {node}
+        new_GE = _graph_entropy_calc(graph, tentative_cluster)
+        if new_GE < previous_GE:
+            # if GE decreases, update cluster and candidate(boundary) of the cluster.
+            cluster = tentative_cluster
+            previous_GE = new_GE
+            candidates = deque(_update_boundary(graph, cluster, deg_dict))
+    return cluster
+            
+
+
+
 def update_cluster(
     graph:nx.Graph,
     cluster:nx.Graph,
@@ -146,10 +188,9 @@ def update_cluster(
     if deg_dict is None:
         deg_dict = dict(graph.degree)
 
-    
     if update_scope == "boundary":
         assert cluster, f"empty cluster seed = {seed}"
-        return _update_cluster_boundary(graph, cluster,seed, cutoff, deg_dict)
+        return _update_cluster_boundary_0(graph, cluster,seed, cutoff, deg_dict)
     elif update_scope == "internal":
         assert cluster, f"empty cluster seed = {seed}"
         return _update_cluster_internal(graph, cluster,seed, deg_dict)
