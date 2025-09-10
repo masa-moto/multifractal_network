@@ -10,6 +10,7 @@ webhook.py
 !.gitignore
 !README.md
 !compass.md
+!link_com_test.py
 
 # entropy-clustering ブランチ用のホワイトリスト。
 !clustering/
@@ -19,6 +20,7 @@ webhook.py
 !clustering/test.py
 !clustering/test.png
 !clustering/soc-dolphins.mtx
+!clustering/link_clustering.py
 !soc-dolphins.mtx
 
 # multifractal 解析のためのSandboxアルゴリズム
