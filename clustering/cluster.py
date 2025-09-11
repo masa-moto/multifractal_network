@@ -132,15 +132,22 @@ def draw_clusters(graph, pos, clusters, fig_path, num_cluster = 5, order = "desc
             pos,
             node_color=node_color,
             edge_color=edge_color,
-            with_labels=True,
+            with_labels=False,
+        
             node_size =50,
             ax = ax[0])
         # if isinstance(seed, frozenset):
             # seed = set(seed)
         if isinstance(seed, frozenset):
-            ax[0].set_title(f"full graph - cluster: {','.join(map(str, seed))}. size = {len(cluster_nodes)}")
+            ax[0].set_title(f"full graph - cluster: {cluster_nodes}. size = {len(cluster_nodes)}")
+
+            
+            # ax[0].set_title(f"full graph - cluster: {','.join(map(str, seed))}. size = {len(cluster_nodes)}")
         else:
-            ax[0].set_title(f"full graph - cluster: {seed}. size = {len(cluster_nodes)}")
+            ax[0].set_title(f"full graph - cluster: {cluster_nodes}. size = {len(cluster_nodes)}")
+            
+
+            # ax[0].set_title(f"full graph - cluster: {seed}. size = {len(cluster_nodes)}")
         
         #right side plot: cluster structure
         subgraph = graph.subgraph(unique_clusters[seed]).copy()
