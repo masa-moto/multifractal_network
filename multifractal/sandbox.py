@@ -2,12 +2,14 @@
 Sandbox algorithm for multifractal analysis of complex networks.
 ref: https://doi.org/10.1103/PhysRevE.103.043303
 
-calculate the mass of the subgraph within a given radius r from a randomly selected node.
-compute the average mass and its moments, and then estimate the generalized fractal dimensions D(q) via tau(q) (= (q-1)D(q)).
-in this implementation, we use breadth-first search (BFS) to find the nodes within distance r from the source node.
+USAGE: from outside, call sandbox_analysis(graph, ...), get (q, tau(q), D(q)).
 
-this program file contains several sections:
-- utility functions for calculation; linearregression, diameter approximation.
+DESCRIPTION: calculate the mass of the subgraph within a given radius r from a randomly selected node.
+    compute the average mass and its moments, and then estimate the generalized fractal dimensions D(q) via tau(q) (= (q-1)D(q)).
+    in this implementation, we use breadth-first search (BFS) to find the nodes within distance r from the source node.
+
+CONTENTS:this program file contains several sections:
+- utility functions for calculation; linear_regression, diameter_approximation.
 - core functions for sandbox algorithm;
     - preprocessing, init_worker functions
     - compute_sandbox_measure: compute the number of nodes within distance r from the source node
@@ -32,11 +34,8 @@ from typing import List, Tuple, Dict, Sequence
 
 #------------------- utility functions ------------------#
 
-def reg1dim(x, y, method="theil-sen"):
+def linear_regression(x, y, method="theil-sen"):
     """
-    returns the result of linear regression over 1-dim data.
-    regression is performed by Linear Regression or TheilSenRegressor from sklearn.
-
     Args:
         x (_type_): _description_
         y (_type_): _description_
@@ -56,8 +55,6 @@ def reg1dim(x, y, method="theil-sen"):
     else:
         raise ValueError(f"Unknown method {method}")
     return model.coef_[0], model.intercept_
-
-
   
 def bfs_distance(graph, source):
     nodes = list(graph.nodes)
@@ -105,8 +102,7 @@ def write_raw_measure(scale_mu:dict[int, np.ndarray], output_prefix:str) -> None
             row = [eps] + list(mu) + [""] * (max_len - len(mu))
             writer.writerow(row)
 
-#------------------- core functions ------------------#
-# pre-processing, init_worker functions
+#------------------- preprocessing ------------------#
 def process_graph(graph:nx.Graph, true_diameter=False) -> Tuple[int, int]:
     N = graph.number_of_nodes()
     if true_diameter:
@@ -116,6 +112,7 @@ def process_graph(graph:nx.Graph, true_diameter=False) -> Tuple[int, int]:
     return diam, N
 
 
+#------------------- core functions ------------------#
 def _init_worker_sandbox(graph_csr, nodes, scale, diam):
     global _graph_csr, _nodes, _scale, _diam
     _graph_csr, _nodes, _scale, _diam = graph_csr, nodes, scale, diam
@@ -136,7 +133,6 @@ def compute_sandbox_measure(graph_csr, N, source, scale)->Sequence[int]:
         if pred[idx] >= 0:
             dist[idx] = dist[pred[idx]] + 1
     return np.array([np.count_nonzero(dist<=r) for r in scale], dtype=float)#距離r以内のノード数
-    # return len(set(nx.single_source_shortest_path_length(graph, source, cutoff=radius).keys()))
 
 def compute_sandbox(graph_csr, scale, diam, source):
     # print(f"This is in sandbox.py/compute_sandbox(), args are follows,\n! ommit graph, scale:{scale}, diam:{diam}, source:{source}")
@@ -147,14 +143,12 @@ def compute_sandbox(graph_csr, scale, diam, source):
                     source=source,
                     scale = scale
                 )
-    # print(f"this is from sandbox.py. : {mu_array}")
-    # print(f"{scale}/{diam}")
     return mu_array/N
 
 def _SB_measure_wrapper(source):
     """
-    graphについての情報はinitializerでglobal variableとして受け取っていることに注意。
-    以下、_hogehogeについては同様にglobalとして扱う
+    information of the graph is passed by global variable.
+    hereafter, _graph_csr, _scale, _diam are passed by global variable.
     """
     return compute_sandbox(_graph_csr, _scale, _diam, source)#->np.array([M(r)/N for r in range(diam)])
 
@@ -162,11 +156,7 @@ def _SB_measure_wrapper(source):
 def compute_Zq(mu:np.ndarray, q:float, method:str = "box_covering")->float:
     if len(mu) == 0:
         print('len(mu) = 0. please check again.')
-        return 1
-    elif method == "box_covering":        
-        if q == 1.0:
-            return -np.sum(mu * np.log(mu))
-        return np.sum(mu ** q)    
+        return 1.0
     elif method == "sandbox":
         # if q == 1.0:
         #     return -np.sum(mu * np.log(mu))
@@ -198,7 +188,7 @@ def compute_Zq_vectorized(scale_measures_array, valid_indices, q,):
 def compute_Dq(
     tau: np.ndarray,
     q: np.ndarray,
-    eps_thresh: float = 1e-4
+    eps_thresh: float = 1e-5
 )->np.ndarray:
     """
     compute Dq = tau(q)/(q-1), masking |q-1| <= eps_thresh as np.nan
@@ -218,9 +208,9 @@ def calculate_mass_exponent(
     regression_method:str = "theil-sen",
     measure_output_prefix = None
 ) -> Tuple[np.ndarray, np.ndarray]:
-    #input and preparation---#
+    
     diam, N = process_graph(graph)
-    print(f"approx. diameter : {diam}")
+    print(f"[INFO] approx. diameter : {diam}")
     nodes = list(graph.nodes())
     q_array = np.linspace(min(q_range), max(q_range), int((max(q_range) - min(q_range))/q_ticks) + 1)
     num_sandbox = max(num_sandbox, int(0.15*N))
@@ -228,15 +218,8 @@ def calculate_mass_exponent(
         scale = np.arange(3)
     else:
         scale = np.arange(2, int(diam*scale_factor))
-        
-    #process branching---#
-    #   |-A: classical coverings
-    #   |-B: sandbox coverings
-    #   -> merge at regression process
-    
-    #branch A: classical covering#
     max_process = int(mp.cpu_count()**.9)
-    print(f"max process:{max_process}")
+    print(f"[INFO] max process:{max_process}")
     q1, q3 = np.percentile(scale, [25, 75])
     iqr_msk = (q1 <= scale) & (scale <= q3)
     valid_scale = scale[iqr_msk]
@@ -258,19 +241,6 @@ def calculate_mass_exponent(
     if measure_output_prefix:
         scale_mu_dict = dict(zip(scale, scale_measures))
         write_raw_measure(scale_mu_dict, measure_output_prefix)
-        # base, _ = os.path.splitext(measure_output_prefix)
-        # csv_file = f"{base}_rawmeasure.csv"
-        # # print(f"measure_output_prefix: {measure_output_prefix}")
-        # max_len = max(len(v) for v in scale_mu.values())
-        # header = ["scale"] + [str(i) for i in range(max_len)]
-        # with open(csv_file, "w", newline = "") as f:
-        #     writer = csv.writer(f)
-        #     writer.writerow(header)
-        #     for scale, measure in scale_mu.items():
-        #         row = [scale] + list(measure) + [""]*(max_len - len(measure))
-        #         writer.writerow(row)
-
-    #merge branch#
 
     valid_indices = valid_scale - scale_offset
 
@@ -284,7 +254,7 @@ def calculate_mass_exponent(
     for i, q in enumerate(q_array):
         assert np.all(np.isfinite(log_Zs_q[i])), f"invalid value encountered. possible inf, nan. {log_Zs_q[i]} "
         
-        slope, _ = reg1dim(log_eps, log_Zs_q[i], method = regression_method)
+        slope, _ = linear_regression(log_eps, log_Zs_q[i], method = regression_method)
         tau_q.append(slope)
     return q_array, np.array(tau_q)
 
@@ -318,7 +288,11 @@ def sandbox_analysis(
 #------------------- main ------------------#
 
 if __name__ == "__main__":
-    g = nx.barabasi_albert_graph(5000, 3, seed=0, initial_graph=nx.complete_graph(4))
+    nodes = 5000
+    m = 3
+    print(f"[INFO] sandbox analysis for Barabasi Albert scale-free network with {nodes}nodes, m={m}.")
+
+    g = nx.barabasi_albert_graph(nodes, m, seed=0, initial_graph=nx.complete_graph(4))
     print(f"[INFO] graph generated. n={g.number_of_nodes()}, m={g.number_of_edges()}")
     q, tau, Dq = sandbox_analysis(
         g,
@@ -329,11 +303,10 @@ if __name__ == "__main__":
         regression_method="theil-sen",
         measure_output_prefix="test_sandbox"
     )
-    print(f"[INFO] sandbox analysis finished.")
     import matplotlib.pyplot as plt
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
 
-    axes[0].plot(q, Dq, marker="o")
+    axes[0].plot(q, Dq, markersize=4, color="blue")
     axes[0].set_xlabel("q")
     axes[0].set_ylabel("D(q)")
     axes[0].set_title("D(q) vs q")
