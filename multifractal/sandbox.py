@@ -290,7 +290,7 @@ def sandbox_analysis(
 if __name__ == "__main__":
     nodes = 5000
     m = 3
-    print(f"[INFO] sandbox analysis for Barabasi Albert scale-free network with {nodes}nodes, m={m}.")
+    print(f"[INFO] sandbox analysis for Barabasi Albert scale-free network with {nodes} nodes, m={m}.")
 
     g = nx.barabasi_albert_graph(nodes, m, seed=0, initial_graph=nx.complete_graph(4))
     print(f"[INFO] graph generated. n={g.number_of_nodes()}, m={g.number_of_edges()}")
