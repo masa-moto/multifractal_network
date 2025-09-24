@@ -1,52 +1,19 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-from clustering.link_clustering import HLC
-<<<<<<< HEAD
-from model.edge_replace_model import EdgeReplaceGraph as ERM
-# -----------------------------
-# 1. グラフ準備（例: c4c6model）
-# -----------------------------
-# G = nx.karate_club_graph()
-G = ERM()
-c4 = nx.cycle_graph(4)
-nx.convert_node_labels_to_integers(c4, first_label=0)
-for i, (u, v, _) in enumerate(c4.edges(data=True)):
-    if i % 2 == 0:
-        c4.edges[u, v]["label"] = "A" 
-    else:
-        c4.edges[u, v]["label"] = "B"
-c6 = nx.cycle_graph(6)
-nx.convert_node_labels_to_integers(c6, first_label=0)
-
-for i, (u, v, _) in enumerate(c6.edges(data=True)):
-    if i % 2 == 0:
-        c6.edges[u, v]["label"] = "A"
-    else:
-        c6.edges[u, v]["label"] = "B"
-
-G = ERM()
-G.set_generator("A", c4, 0, 2, 1)
-G.set_generator("B", c6, 0, 3, 1)
-repl_iter = 3
-
-# everytime we apply a replacement, we should initialize the graph to avoid overflowing size of the graph
-G.set_initial_label("A")
-for i in range(repl_iter):
-    G.apply_replacement()
-
-=======
 from model.edge_replace_model import EdgeReplaceGraph
 import numpy as np
 from scipy.cluster.hierarchy import dendrogram
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram
+from clustering.link_clustering import HLC
+
+import networkx as nx 
 # -----------------------------
 # 1. グラフ準備（例: Karate Club）
 # -----------------------------
 # G = nx.karate_club_graph()
 #--------------------------
 # edge replace model
->>>>>>> origin/ssh133_workspace
 
-replace_iteration = 3
+replace_iteration = 4
 c4 = nx.Graph()
 c4.add_edges_from([
     [0, 1,{"label": "A"}],
@@ -112,49 +79,61 @@ if threshold:
     print(f"threshold = {threshold:.4f},  num culster={len(cid2nodes.values())}")
 else:
     print(f"Partition density D_max = {best_D:.4f}, threshold S_max = {best_S:.4f},  num culster={len(cid2nodes.values())}")
-
+print(f"[info]: {cid2nodes}")
 # 色リストを用意（コミュニティ数に応じて拡張可）
-colors = plt.cm.tab20.colors  # 最大20色
-cid2color = {cid: colors[i % len(colors)] for i, cid in enumerate(cid2nodes)}
+# colors = plt.cm.tab20.colors  # 最大20色
+import matplotlib
+import random
+colors = list(matplotlib.colors.XKCD_COLORS.values())
+random.shuffle(colors)
+cid2color = {cid: colors[i % (len(colors))] for i, cid in enumerate(cid2nodes)}
 
 # -----------------------------
 # 4. 可視化
 # -----------------------------
-<<<<<<< HEAD
-# pos = nx.spring_layout(G, seed=42)  # ノード配置固定
-pos = nx.nx_agraph.graphviz_layout(G, prog = "sfdp")
 
-
-=======
 pos = nx.nx_agraph.pygraphviz_layout(G, prog="sfdp")
->>>>>>> origin/ssh133_workspace
 plt.figure(figsize=(8, 6))
 
+# クラスタサイズ順に並び替え
+sorted_cids = sorted(cid2nodes.keys(), key=lambda cid: len(cid2nodes[cid]), reverse=True)
+cid_mapping = {old: new for new, old in enumerate(sorted_cids)}
+
+shown_cid = set()
 # コミュニティごとにエッジを描画
 for cid, nodes in cid2nodes.items():
     sub_edges = [e for e in G.edges() if set(e) <= nodes]
-<<<<<<< HEAD
-    nx.draw_networkx_edges(G, pos, edgelist=sub_edges, edge_color=[cid2color[cid]]*len(sub_edges), width=5)
+    nx.draw_networkx_edges(G, pos, edgelist=sub_edges, edge_color=[cid2color[cid]]*len(sub_edges), width=1)
+    if cid not in shown_cid:
+        edge = sub_edges[-1]
+        x_mid = (pos[edge[0]][0] + pos[edge[1]][0]) / 2
+        y_mid = (pos[edge[0]][1] + pos[edge[1]][1]) / 2
+        plt.text(
+            x_mid, y_mid,
+            f"{str(cid_mapping[cid])}({len(nodes)})",
+            fontsize=3, color='black', ha='left', va='center',
+            bbox=dict(
+                facecolor=matplotlib.colors.to_rgba(cid2color[cid]),
+                alpha=0.3,
+                edgecolor=matplotlib.colors.to_rgba(cid2color[cid])))
+        shown_cid.add(cid)
 
 # ノードは全体を描画（境界色を黒で統一）
-nx.draw_networkx_nodes(G, pos, node_size=15, alpha = .7)
-=======
-    nx.draw_networkx_edges(G, pos, edgelist=sub_edges, edge_color=[cid2color[cid]]*len(sub_edges), width=3)
 
 # ノードは全体を描画（境界色を黒で統一）
-nx.draw_networkx_nodes(G, pos, node_size=10, node_color='lightgray', edgecolors='black')
->>>>>>> origin/ssh133_workspace
+# nx.draw_networkx_nodes(G, pos, node_size=10, node_color='lightgray', edgecolors='white')
 # nx.draw_networkx_labels(G, pos)
 
 plt.title("Link Communities (Edge-based, overlapping)")
 plt.axis('off')
-plt.savefig("link_communities.png", dpi=300)
+plt.savefig(f"link_communities_{replace_iteration}.png", dpi=300)
 
 #--------------------
 # dendrogram 可視化
 #--------------------
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import dendrogram
+from clustering.link_clustering import HLC
 
 # HLC 実行
 hlc = HLC(adj, edges)
@@ -192,7 +171,7 @@ else:
 plt.axhline(y=thresh, color='r', linestyle='--', lw=1.5)
 plt.xlabel("Edge ID")
 plt.ylabel(f"Distance (1 - similarity)\nthreshold:{thresh:.4f}")
-plt.savefig("link_dendro.png")
+plt.savefig(f"link_dendro_{replace_iteration}.png")
 
 # hlc = HLC(adj, edges)
 # best_P, best_S, best_D, list_D, orig_cid2edge, linkage = hlc.single_linkage(dendro_flag=True)
