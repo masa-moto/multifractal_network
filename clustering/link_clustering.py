@@ -230,7 +230,7 @@ def read_edgelist_weighted(filename,delimiter=None,nodetype=str,weighttype=float
         ni,nj,wij = nodetype(L[0]),nodetype(L[1]),weighttype(L[2]) # other columns ignored
         if ni != nj: # skip any self-loops...
             ni,nj = swap(ni,nj)
-            edges.add( (ni,nj) )
+            edges.add((ni,nj))
             ij2wij[ni,nj] = wij
             adj[ni].add(nj)
             adj[nj].add(ni) # since undirected
