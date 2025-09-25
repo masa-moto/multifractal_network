@@ -21,6 +21,7 @@ webhook.py
 !clustering/test.png
 !clustering/soc-dolphins.mtx
 !clustering/link_clustering.py
+!clustering/persistence_clustering.py
 !soc-dolphins.mtx
 
 # multifractal 解析のためのSandboxアルゴリズム
