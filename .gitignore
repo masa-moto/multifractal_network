@@ -3,13 +3,12 @@
 
 * 
 
-# ウェブフックにdiscordを使用しており、urlが載っているのでgitには見せない
+# ウェブフックにdiscordを使用しており、urlが載っているので特にgitには見せない
 webhook.py
 
 # 以下、ホワイトリスト（gitで追跡してよいファイルのみ指定する）
 !.gitignore
 !README.md
-!compass.md
 !link_com_test.py
 
 # entropy-clustering ブランチ用のホワイトリスト。
