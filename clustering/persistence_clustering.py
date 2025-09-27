@@ -6,18 +6,20 @@ USAGE: from outside, call k_cluster_filtration(grpah, ...), get ().
 graph should be weighted, otherwise random values between [0, 1] by uniform distribution is assigned as the weight of each edges.
 # sandbox_analysis(graph, ...), get (q, tau(q), D(q)).
 
-DESCRIPTION: 
-calculate the mass of the subgraph within a given radius r from a randomly selected node.
-    compute the average mass and its moments, and then estimate the generalized fractal dimensions D(q) via tau(q) (= (q-1)D(q)).
-    in this implementation, we use breadth-first search (BFS) to find the nodes within distance r from the source node.
+DESCRIPTION: k-cluster fitration is a method to extract persistent clusters from weighted networks.
+    the method is based on the union-find algorithm, and it tracks the birth and death of clusters as edges are added in order of their weights.
+    the output is a list of ClusterLifetime objects, each containing the birth time, death time, and size of a cluster.
+    if a cluster does not die (i.e., it persists until the end of the filtration), its death time is recorded as infinity.
+    the duration of a cluster is defined as the difference between its death and birth times, with infinity if it does not die.
+    this implementation also includes optimizations such as path compression and union by size.
+
 
 CONTENTS:this program file contains several sections;
-- utility functions for calculation; linear_regression, diameter_approximation.
-- core functions for sandbox algorithm;
-    - preprocessing, init_worker functions
-    - compute_sandbox_measure: compute the number of nodes within distance r from the source node
-    - compute_sandbox: compute the normalized mass M(r)/N for a given source node
-    - compute_Zq: compute Z(q) from the measure mu 
+- utility;
+    - dataclass ClusterLifetime: to store information of each cluster. birth, death, size are stored as attributes. duration() method returns the duration of the cluster.
+- core;
+    - class k_cluster_filtration: main class for k-cluster filtration.
+    - wrapper function 
 """
 #-------------- imports  ---------------#
 import networkx as nx 
@@ -83,18 +85,22 @@ class k_cluster_filtration():
             ru, rv = self.find(u), self.find(v)
             if ru != rv:
                 new_root, merged = self.merge(u, v)
-                
+                dead_root = rv if new_root == ru else ru
                 if self.size[new_root] >= self.k and new_root not in self.persistence:
                     self.persistence[new_root] = w # store information as birth time
-                if ru in self.persistence and self.size[ru] < self.k:
-                    self.lifetimes.append(ClusterLifetime(self.persistence[ru], w, self.size[ru]))
-                    del self.persistence[ru]
-                    print(f"dead{ru}")
+
+                if dead_root in self.persistence:
+                    self.lifetimes.append(ClusterLifetime(self.persistence[dead_root], w, self.size[dead_root]))
+                    del self.persistence[dead_root]
+                # if ru in self.persistence and merged == True:
+                #     self.lifetimes.append(ClusterLifetime(self.persistence[ru], w, self.size[ru]))
+                #     del self.persistence[ru]
+                #     print(f"dead{ru}")
                     
-                if rv in self.persistence and self.size[rv] < self.k:
-                    self.lifetimes.append(ClusterLifetime(self.persistence[rv], w, self.size[rv]))
-                    del self.persistence[rv]
-                    print(f"dead{rv}")
+                # if rv in self.persistence and merged == True:
+                #     self.lifetimes.append(ClusterLifetime(self.persistence[rv], w, self.size[rv]))
+                #     del self.persistence[rv]
+                #     print(f"dead{rv}")
         for root, birth in self.persistence.items():
             self.lifetimes.append(ClusterLifetime(birth, float("inf"), self.size[root]))
         return self.lifetimes
@@ -103,7 +109,31 @@ class k_cluster_filtration():
     
 
 if __name__ == "__main__":
-    g = nx.barabasi_albert_graph(200, 1, 0, nx.complete_graph(4))
+    import matplotlib.pyplot as plt
+    import heapq
+    def plot_PD(lifetimes):
+        births = [c.birth for c in lifetimes]
+        deaths = [c.death/c.birth for c in lifetimes]
+        _, second = heapq.nlargest(2, deaths)
+        plt.figure(figsize=(5,5))
+        for b, d in zip(births, deaths):
+            if d == float("inf"):
+                long_cluster_b = b
+                plt.scatter(b, (max(births)+second)*1.1, marker="^", c="k", zorder=5,)  # 無限寿命は三角で上に描く
+            else:
+                plt.scatter(b, d, c="b")
+        lim = max(births + [d for d in deaths if d != float("inf")])
+        plt.plot([0, max(births)], [ (max(births)+second)*1.1, (max(births)+second)*1.1], "r--", zorder=1, label=f"surviving cluster\nbirth: {long_cluster_b:.4f}")  # 反対側の対角線
+        # plt.plot([0, lim], [0, lim], "k--")  # 対角線
+        plt.xlabel("Birth")
+        plt.ylabel("Death/Birth")
+        plt.legend(loc="upper right")
+        plt.title("Persistence Diagram")
+        plt.savefig("persistence_diagram.png")
+
+    g = nx.barabasi_albert_graph(10000, 2, 0, nx.complete_graph(4))
     filter = k_cluster_filtration(g, k=5, seed = 0)
     for ff in filter.fit():
-        print(ff.duration())
+        print(ff)
+    print(filter.persistence)
+    plot_PD(filter.lifetimes)
